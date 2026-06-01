@@ -11,7 +11,8 @@ class AskController extends Controller
     public function __construct(private SimpleAskService $askService) {}
 
     /**
-     * Affiche la liste des models
+     * Envoie les valeurs des variables 'models' et 'selectedModel' a la vue ask/Index.vue 
+     * @return \Inertia\Response
      */
     public function index()
     {
@@ -22,7 +23,7 @@ class AskController extends Controller
     }
 
     /**
-     * Envoie une question au modèle IA et retourne la réponse
+     * Envoie une question au modèle IA et retourne la réponse, puis envoie ceci a la vue ask/Index.vue.
      * @param \Illuminate\Http\Request $request
      * @param string $request->message      Le message à envoyer au modèle
      * @param string $request->model        L'identifiant du modèle IA à utiliser
