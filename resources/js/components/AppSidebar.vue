@@ -14,13 +14,19 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { dashboard} from '@/routes';
 import type { NavItem } from '@/types';
+import { index } from '@/routes/ask';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Chatbot',
+        href: index(),
         icon: LayoutGrid,
     },
 ];

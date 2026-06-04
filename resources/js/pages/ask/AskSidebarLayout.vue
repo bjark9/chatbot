@@ -45,8 +45,18 @@ watchEffect(() => {
         </div>
 
         <div class="mb-4 border-b pb-4">
-            <p class="font-medium text-gray-700">{{ currentModel.name}}</p>
-            <p class="font-small text-gray-700">{{ currentModel.description}}</p>
+            <div>
+                <h2 class="font-medium bold text-gray-900 py-3">Name</h2>
+                <p class="font-medium text-gray-700">{{ currentModel.name}}</p>
+            </div>
+            <div>
+                <h2 class="font-medium bold text-gray-900 py-3">Description</h2>
+                <p class="font-small text-gray-700">{{ currentModel.description}}</p>
+            </div>
+            <div>
+                <h2 class="font-medium bold text-gray-900 py-3">Context Length</h2>
+                <p class="font-small text-gray-700">{{ currentModel.context_length}}</p>
+            </div>
         </div>
     </div>
 </template>
