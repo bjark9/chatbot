@@ -17,6 +17,7 @@ import {
 import { dashboard} from '@/routes';
 import type { NavItem } from '@/types';
 import { index } from '@/routes/ask';
+import conversations from '@/routes/conversations';
 
 const mainNavItems: NavItem[] = [
     {
@@ -27,6 +28,11 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Chatbot',
         href: index(),
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Conversations',
+        href: conversations.index(),
         icon: LayoutGrid,
     },
 ];

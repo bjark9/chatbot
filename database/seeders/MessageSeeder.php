@@ -14,9 +14,9 @@ class MessageSeeder extends Seeder
      */
     public function run(): void
     {
-        // For each existing conversation, create 5 messages
+        // For each existing conversation, create 15 messages
         Conversation::all()->each(function ($conversation) {
-            Message::factory(5)->create([
+            Message::factory(15)->create([
                 'conversation_id' => $conversation->id, // override with real conversation
             ]);
         });

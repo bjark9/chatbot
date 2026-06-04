@@ -18,7 +18,7 @@ class ConversationSeeder extends Seeder
         $user = User::where('email', 'test@example.com')->first();
 
         // Create 10 conversations for that user
-        Conversation::factory(10)->create([
+        Conversation::factory(25)->create([
             'user_id' => $user->id,
         ]);
 

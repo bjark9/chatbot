@@ -12,6 +12,11 @@ const selectedId = ref(null)
 const messages = ref([])
 const loading = ref(false)
 
+function selectConversation(id)
+{
+    selectedId.value = id
+}
+
 // Watch for when the user selects a different conversation
 // Triggers automatically when "selectId" changes
 watch(selectedId, async (newId) => {
@@ -19,7 +24,7 @@ watch(selectedId, async (newId) => {
 
     loading.value = true
     const response = await axios.get(`/conversations/${newId}`)
-    messages.value = response.data.messages  // ② grab messages from the response
+    messages.value = response.data.messages  // Grab messages from the response
     loading.value = false
 })
 
@@ -27,39 +32,54 @@ console.log(props.conversations)
 </script>
 
 <template>
+    <div class="flex gap-6 p-4">
 
-    <!-- Conversations dropdown button -->
-    <!-- v-model = binds selected conversation to variable "selectedId" -->
-    <select 
-        v-model="selectedId" 
-        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-    >
-        <option v-for="conversation in conversations" :key="conversation.id" :value="conversation.id">
-            {{ conversation.title }}
-        </option>
-    </select>
-
-    <p v-if="loading" class="text-sm text-gray-400 mt-4">Loading messages...</p>
-
-    <!-- Messages -->
-    <div v-else-if="messages.length > 0" class="mt-4 flex flex-col gap-3">
-        <div
-            v-for="message in messages"
-            :key="message.id"
-            class="p-3 rounded-lg text-sm"
-            :class="message.role === 'user'
-                ? 'bg-blue-100 dark:bg-blue-900 text-right ml-12'
-                : 'bg-gray-100 dark:bg-gray-700 text-left mr-12'"
-        >
-            <span class="block font-semibold text-xs mb-1 text-gray-500">
-                {{ message.role === 'user' ? 'You' : 'AI' }}
-            </span>
-            {{ message.content }}
+        <!-- Conversation list (left column) -->
+        <div class="w-64 flex flex-col gap-1 h-screen overflow-y-auto">
+            <button
+                v-for="conversation in conversations"
+                :key="conversation.id"
+                @click="selectConversation(conversation.id)"
+                class="w-full text-left px-4 py-3 rounded-lg text-sm transition-colors"
+                :class="selectedId === conversation.id
+                    ? 'bg-gray-200 dark:bg-gray-700 font-semibold'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'"
+            >
+                {{ conversation.title }}
+            </button>
         </div>
+
+        <!-- Divider -->
+        <div class="w-px bg-gray-200 dark:bg-gray-700"></div>
+
+        <!-- Messages (right column) -->
+        <div class="flex-1 overflow-y-auto flex flex-col gap-3">
+            <p v-if="loading" class="text-sm text-gray-400">Loading messages...</p>
+
+            <template v-else-if="messages.length > 0">
+                <div
+                    v-for="message in messages"
+                    :key="message.id"
+                    class="p-3 rounded-lg text-sm"
+                    :class="message.role === 'user'
+                        ? 'bg-blue-100 dark:bg-blue-900 text-right ml-12'
+                        : 'bg-gray-100 dark:bg-gray-700 text-left mr-12'"
+                >
+                    <span class="block font-semibold text-xs mb-1 text-gray-500">
+                        {{ message.role === 'user' ? 'You' : 'AI' }}
+                    </span>
+                    {{ message.content }}
+                </div>
+            </template>
+
+            <p v-else-if="selectedId && !loading" class="text-sm text-gray-400">
+                No messages in this conversation yet.
+            </p>
+
+            <p v-else class="text-sm text-gray-400">
+                Select a conversation to view messages.
+            </p>
+        </div>
+
     </div>
-
-    <p v-else-if="selectedId && !loading" class="text-sm text-gray-400 mt-4">
-        No messages in this conversation yet.
-    </p>
-
 </template>
