@@ -20,7 +20,7 @@ class ConversationController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        return Inertia::render('ask/Conversations', [
+        return Inertia::render('conversations/Index', [ 
             'conversations' => $conversations,
         ]);
     }
@@ -46,7 +46,6 @@ class ConversationController extends Controller
     /**
      * GET conversation/{id}
      * Get a single conversation by id
-     * @return Inertia\Response 
      */
     public function show($id)
     {
@@ -55,9 +54,7 @@ class ConversationController extends Controller
             ->with('messages') // TODO: Link messages to conversations
             ->firstOrFail();
 
-        return Inertia::render('ask/ConversationDetail', [
-            'conversation' => $conversation,
-        ]);
+        return response()->json($conversation);
     }
     
     /**
