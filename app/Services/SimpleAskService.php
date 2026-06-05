@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Http;
  */
 class SimpleAskService
 {
-    public const DEFAULT_MODEL = 'openai/gpt-5-mini';
+    public const DEFAULT_MODEL = 'mistralai/mistral-small-24b-instruct-2501';
 
     private string $apiKey;
     private string $baseUrl;

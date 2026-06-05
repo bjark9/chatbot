@@ -10,6 +10,7 @@ class AiModel extends Model
     protected $table = 'ai_models'; // is needed because Laravel would otherwise guess the table name as a_i_models from the class name AiModel.
 
     protected $fillable = [
+        'model_id',
         'name',
         'provider',
         'max_tokens',

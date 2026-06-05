@@ -17,7 +17,7 @@ class Conversation extends Model
     // A conversation has ONE or MANY messages
     public function messages()
     {
-        return $this->hasMany(Message::class);
+        return $this->hasMany(Message::class)->orderBy('created_at', 'asc');
     }
 
     // A conversation belongs to ONE user 

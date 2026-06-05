@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AskController;
 use App\Http\Controllers\ConversationController;
+use App\Http\Controllers\MessageController;
 
 Route::inertia('/', 'Welcome')->name('home');
 
@@ -13,6 +14,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/conversations', [ConversationController::class, 'index'])
     ->name('conversations.index');
     Route::get('/conversations/{id}', [ConversationController::class, 'show']);
+    Route::get('ask/{conversation}', [MessageController::class, 'index']);
+    Route::post('ask/{conversation}/messages', [MessageController::class, 'store']);
     Route::get('/ask', [AskController::class, 'index'])
     ->name('ask.index');
     Route::post('/ask', [AskController::class, 'ask'])

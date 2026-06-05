@@ -23,12 +23,17 @@ watch(selectedId, async (newId) => {
     if (!newId) return
 
     loading.value = true
-    const response = await axios.get(`/conversations/${newId}`)
-    messages.value = response.data.messages  // Grab messages from the response
-    loading.value = false
+    
+    // Add try and catch or else the loader spinner stays forever 
+    try {
+        const response = await axios.get(`/conversations/${newId}`)
+        messages.value = response.data.messages
+    } catch (e) {
+        messages.value = []
+    } finally {
+        loading.value = false
+    }
 })
-
-console.log(props.conversations)
 </script>
 
 <template>

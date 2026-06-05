@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('ai_models', function (Blueprint $table) {
             $table->id();
+            $table->string('model_id')->unique();
             $table->timestamps();
             $table->string('name');
             $table->string('provider');
