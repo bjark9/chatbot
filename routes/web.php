@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AskController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\PersonnalisationController;
 
 Route::inertia('/', 'Welcome')->name('home');
 
@@ -21,6 +22,9 @@ Route::middleware(['auth'])->group(function () {
     ->name('ask.index');
     Route::post('/ask', [AskController::class, 'ask'])
     ->name('ask.post');
+    Route::get('/personnalisation', [PersonnalisationController::class, 'index'])
+    ->name('personnalisation.instructions');
+    Route::post('/personnalisation/instructions', [PersonnalisationController::class, 'store']);
 });
 
 

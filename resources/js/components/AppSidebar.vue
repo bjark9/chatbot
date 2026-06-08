@@ -18,6 +18,7 @@ import { dashboard} from '@/routes';
 import type { NavItem } from '@/types';
 import { index } from '@/routes/ask';
 import conversations from '@/routes/conversations';
+import personnalisation from '@/routes/personnalisation';
 
 const mainNavItems: NavItem[] = [
     {
@@ -35,6 +36,11 @@ const mainNavItems: NavItem[] = [
         href: conversations.index(),
         icon: LayoutGrid,
     },
+    {
+        title: 'Personnalisation',
+        href: personnalisation.instructions(),
+        icon: LayoutGrid,
+    }
 ];
 
 const footerNavItems: NavItem[] = [

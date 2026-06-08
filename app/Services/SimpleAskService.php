@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Instruction;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -113,12 +114,26 @@ class SimpleAskService
         $user = auth()->user()?->name ?? 'l\'utilisateur';
         $now = now()->locale('fr')->format('l d F Y H:i');
 
-        return [
-            'role' => 'system',
-            'content' => view('prompts.system', [
+        $instruction = Instruction::where('user_id', auth()->id())->first();
+
+        $parts = [
+            view('prompts.system', [
                 'now' => $now,
                 'user' => $user,
             ])->render(),
+        ];
+
+        if ($instruction?->assistant_instructions) {
+            $parts[] = "Instructions pour l'IA :\n{$instruction->assistant_instructions}";
+        }
+
+        if ($instruction?->user_instructions) {
+            $parts[] = "Qui est l'utilisateur :\n{$instruction->user_instructions}";
+        }
+
+        return [
+            'role' => 'system',
+            'content' => implode("\n\n", $parts),
         ];
     }
 }
