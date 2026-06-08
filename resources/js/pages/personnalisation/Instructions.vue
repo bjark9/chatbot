@@ -32,13 +32,13 @@ watch([assistantContent, userContent], () => {
 
 <template>
     <div class="px-3 py-3">
-    <p>Instructions IA</p>
+    <h1>Instructions IA</h1>
         <textarea v-model="assistantContent" rows="4" cols="50" />
     </div>
     <br/>
 
     <div class="px-3 py-3">
-    <p>Who are you?</p>
+    <h1>Who are you?</h1>
         <textarea v-model="userContent" rows="4" cols="50" />
     </div>
 </template>

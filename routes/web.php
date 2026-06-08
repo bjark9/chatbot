@@ -22,9 +22,15 @@ Route::middleware(['auth'])->group(function () {
     ->name('ask.index');
     Route::post('/ask', [AskController::class, 'ask'])
     ->name('ask.post');
+    // Personnalisation
     Route::get('/personnalisation', [PersonnalisationController::class, 'index'])
     ->name('personnalisation.instructions');
     Route::post('/personnalisation/instructions', [PersonnalisationController::class, 'store']);
+    // AskStream
+    Route::get('/ask-stream', [\App\Http\Controllers\AskStreamController::class, 'index'])
+    ->name('stream.index');
+    Route::post('/ask-stream', [\App\Http\Controllers\AskStreamController::class, 'stream'])
+    ->name('stream.post');
 });
 
 
