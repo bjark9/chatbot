@@ -71,6 +71,8 @@ class MessageController extends Controller
                 'content'         => $responseText,
                 'is_error'        => false,
             ]);
+
+            $conversation->updateAutoTitle();
         } catch (\RuntimeException $e) {
             Message::create([
                 'conversation_id' => $conversation->id,
@@ -79,8 +81,10 @@ class MessageController extends Controller
                 'content'         => $e->getMessage(),
                 'is_error'        => true,
             ]);
+
+            $conversation->updateAutoTitle();
         }
 
-        return redirect()->back();
+        return redirect()->route('ask.conversation', ['conversation' => $conversation->id]);
     }
 }

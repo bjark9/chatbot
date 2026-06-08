@@ -14,7 +14,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/conversations', [ConversationController::class, 'index'])
     ->name('conversations.index');
     Route::get('/conversations/{id}', [ConversationController::class, 'show']);
-    Route::get('ask/{conversation}', [MessageController::class, 'index']);
+    Route::get('ask/{conversation}', [MessageController::class, 'index'])
+        ->name('ask.conversation');
     Route::post('ask/{conversation}/messages', [MessageController::class, 'store']);
     Route::get('/ask', [AskController::class, 'index'])
     ->name('ask.index');

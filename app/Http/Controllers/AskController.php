@@ -44,7 +44,7 @@ class AskController extends Controller
 
         $conversation = Conversation::create([
             'user_id' => Auth::id(),
-            'title' => 'New Conversation', // TODO: Title has to be auto-generated in function of conversation
+            'title' => 'New Conversation',
             'is_archived' => false,
         ]);
 
@@ -91,6 +91,8 @@ class AskController extends Controller
                 'content' => $response,
                 'is_error' => false,
             ]);
+
+            $conversation->updateAutoTitle();
         } catch (\Exception $e) {
             $response = null;
 
@@ -101,6 +103,8 @@ class AskController extends Controller
                 'content' => $e->getMessage(),
                 'is_error' => true,
             ]);
+
+            $conversation->updateAutoTitle();
         }
 
         return Inertia::render('ask/Index', [
