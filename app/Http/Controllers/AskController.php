@@ -12,105 +12,86 @@ use Inertia\Inertia;
 
 class AskController extends Controller
 {
-    // API Service
     public function __construct(private SimpleAskService $askService) {}
 
     /**
-     * Envoie les valeurs des variables 'models' et 'selectedModel' a la vue ask/Index.vue 
-     * @return \Inertia\Response
+     * State 1: Fresh conversation screen
      */
     public function index()
     {
         return Inertia::render('ask/Index', [
-            'models' => $this->askService->getModels(),
+            'models'        => $this->askService->getModels(),
             'selectedModel' => $this->askService::DEFAULT_MODEL,
+            'conversation'  => null,
+            'messages'      => [],
         ]);
     }
 
     /**
-     * Create a new message for each request to the API
-     * @param \Illuminate\Http\Request $request
-     * @param string $request->message      Le message à envoyer au modèle
-     * @param string $request->model        L'identifiant du modèle IA à utiliser
-     * @return \Inertia\Response
+     * State 2: Existing conversation screen (Loaded after redirecting)
      */
-    public function ask(Request $request)
+    public function show(Conversation $conversation)
     {
-        // Validate that the request contains exactly two variabels: a message (string) and a model (string)
+        // Security check: ensure the conversation belongs to the logged-in user
+        if ($conversation->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        return Inertia::render('ask/Index', [
+            'models'        => $this->askService->getModels(),
+            'selectedModel' => $this->askService::DEFAULT_MODEL,
+            'conversation'  => $conversation,
+            // Pass the historical messages back to populate Vue's v-for loop
+            'messages'      => $conversation->messages()
+                ->orderBy('created_at', 'asc')
+                ->get()
+                ->map(fn($m) => [
+                    'id'       => $m->id,
+                    'role'     => $m->role,
+                    'content'  => $m->content,
+                ]),
+        ]);
+    }
+
+    /**
+     * Handles incoming prompts (Both brand new and ongoing)
+     */
+    public function ask(Request $request, Conversation $conversation = null)
+    {
         $request->validate([
             'message' => 'required|string',
-            'model' => 'required|string',
+            'model'   => 'required|string',
         ]);
 
-        $conversation = Conversation::create([
-            'user_id' => Auth::id(),
-            'title' => 'New Conversation',
-            'is_archived' => false,
-        ]);
+        // If no conversation was passed in the URL parameters, create a new one
+        if (!$conversation) {
+            $conversation = Conversation::create([
+                'user_id'     => Auth::id(),
+                'title'       => substr($request->message, 0, 30) . '...', // Auto-title from first prompt
+                'is_archived' => false,
+            ]);
+        }
 
-        // Look up or create an AiModel matching request->model
+        // Fetch or prepare the AI model configuration
         $aiModel = AiModel::firstOrCreate(
             ['model_id' => $request->model],
             [
-                'name' => $request->model,
-                'provider' => 'openrouter',
+                'name'       => $request->model,
+                'provider'   => 'openrouter',
                 'max_tokens' => 8192,
             ]
         );
 
-        // Save user's message
+        // Save the user's question to the database instantly
         Message::create([
             'conversation_id' => $conversation->id,
-            'ai_model_id' => $aiModel->id,
-            'role' => 'user',
-            'content' => $request->message,
+            'ai_model_id'     => $aiModel->id,
+            'role'            => 'user',
+            'content'         => $request->message,
         ]);
 
-        // Create the chat history and format as role/content
-        $history = $conversation->messages()
-            ->orderBy('created_at')
-            ->get()
-            ->map(fn(Message $m) => [
-                'role' => $m->role,
-                'content' => $m->content,
-            ])
-            ->toArray();
-
-        // Call the SimpleAskService
-        try {
-            $response = $this->askService->sendMessage(
-                messages: $history,
-                model: $request->model
-            );
-
-            // Create AI message
-            Message::create([
-                'conversation_id' => $conversation->id,
-                'ai_model_id' => $aiModel->id,
-                'role' => 'assistant',
-                'content' => $response,
-                'is_error' => false,
-            ]);
-
-            $conversation->updateAutoTitle();
-        } catch (\Exception $e) {
-            $response = null;
-
-            Message::create([
-                'conversation_id' => $conversation->id,
-                'ai_model_id' => $aiModel->id,
-                'role' => 'assistant',
-                'content' => $e->getMessage(),
-                'is_error' => true,
-            ]);
-
-            $conversation->updateAutoTitle();
-        }
-
-        return Inertia::render('ask/Index', [
-            'models' => $this->askService->getModels(),
-            'selectedModel' => $request->model,
-            'conversation' => $conversation->load('messages.ai_model'),
-        ]);
+        // Redirect to the "show" route for this specific conversation id
+        // Inertia will pick this up and seamlessly transition the frontend URL without a hard reload
+        return redirect()->route('ask.show', $conversation)->with('conversation', $conversation->load('messages'));
     }
 }

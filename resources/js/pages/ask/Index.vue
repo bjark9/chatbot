@@ -1,10 +1,15 @@
 <script setup>
-import { computed, watch } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { ref, computed, watch } from 'vue'
+import { useForm, router } from '@inertiajs/vue3'
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
 import AskSidebarLayout from './AskSidebarLayout.vue'
+import { useStream } from '@laravel/stream-vue'; // Gère la connexion SSE et la récpetion des chunks
+
+// State
+const temperature = ref(1.0);
+const reasoningEffort = ref<'low' | 'medium' | 'high' | null>(null);
 
 const props = defineProps({
     models: Array,
@@ -22,18 +27,82 @@ const form = useForm({
     messages: props.messages,
 })
 
+/**
+ * useStream hook - Le hook concatène automatiquement dans `data`
+ * Le backend envoie du texte avec marqueurs [REASONING]...[/REASONING]
+ */
+const { data, isFetching, isStreaming, send, cancel } = useStream(
+    '/ask-stream',
+    {
+        onData: () => {
+            // Callback appelé pour chaque chunk reçu
+        },
+        onFinish: () => {
+            // data resets itselfs automatically on the next send() call            
+            // Trigger Inertia reload to pull the new assistant message into messageList
+            router.reload({ 
+                only: ['conversation']
+            })
+        },
+        onError: (err) => {
+            console.error('Erreur streaming:', err);
+        },
+    },
+);
+
 const actionUrl = computed(() => {
     return props.conversation?.id ? `/ask/${props.conversation.id}/messages` : '/ask'
 })
 
 const submit = () => {
+    if (!form.message.trim()) return;
+
+    // Capture the message text before resetting or posting
+    const userPrompt = form.message;
+
+    // STEP 1: Immediately tell Inertia to save the USER'S question to the database
     form.post(actionUrl.value, {
         preserveScroll: true,
         onSuccess: () => {
-            form.reset('message') // Only clear the message input, keep selected model and history
+            form.reset('message'); // Clear the input field immediately
+            
+            // STEP 2: The user's question is now safely in 'messageList'. 
+            // NOW start the stream to get the AI's response.
+            send({
+                message: userPrompt,
+                model: form.model,
+                temperature: temperature.value,
+                reasoning_effort: reasoningEffort.value,
+                conversation_id: props.conversation?.id
+            });
         },
-    })
-}
+    });
+};
+
+/**
+ * Extrait le reasoning des marqueurs
+ */
+const streamedReasoning = computed(() => {
+    if (!data.value) return '';
+    const matches = data.value.match(/\[REASONING\]([\s\S]*?)\[\/REASONING\]/g);
+    if (!matches) return '';
+    return matches
+        .map((m) =>
+            m.replace(/\[REASONING\]/g, '').replace(/\[\/REASONING\]/g, ''),
+        )
+        .join('');
+});
+
+/**
+ * Extrait le contenu principal (sans le reasoning)
+ */
+const streamedContent = computed(() => {
+    if (!data.value) return '';
+    // Enlever les blocs [REASONING]...[/REASONING]
+    return data.value
+        .replace(/\[REASONING\][\s\S]*?\[\/REASONING\]/g, '')
+        .trim();
+});
 
 watch(
     () => props.messages,
@@ -77,6 +146,12 @@ const md = new MarkdownIt({
         <!-- Main content -->
         <div class="max-w-3xl mx-auto px-4 py-10 flex flex-col gap-6">
 
+            <!--
+                <div class="main-content">
+                    <div v-html="md.render(streamedContent)"></div>
+                </div>
+            -->   
+
             <!-- Model selector -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -94,36 +169,49 @@ const md = new MarkdownIt({
 
             <!-- Conversation messages -->
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[60vh] pb-4">
-                <template v-if="messageList.length > 0">
+                
+            <div v-if="messageList.length > 0" class="flex flex-col gap-4">
+                <div
+                    v-for="(message, index) in messageList"
+                    :key="message.id ?? index"
+                    class="flex"
+                    :class="message.role === 'user' ? 'justify-end' : 'justify-start'"
+                >
                     <div
-                        v-for="(message, index) in messageList"
-                        :key="message.id ?? index"
-                        class="flex"
-                        :class="message.role === 'user' ? 'justify-end' : 'justify-start'"
+                        class="max-w-[80%] rounded-lg px-4 py-3 text-sm"
+                        :class="{
+                            'bg-blue-600 text-white': message.role === 'user',
+                            'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100': message.role === 'assistant' && !message.is_error,
+                            'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400': message.is_error,
+                        }"
                     >
+                        <template v-if="message.role === 'user'">
+                            {{ message.content }}
+                        </template>
                         <div
-                            class="max-w-[80%] rounded-lg px-4 py-3 text-sm"
-                            :class="{
-                                'bg-blue-600 text-white': message.role === 'user',
-                                'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100': message.role === 'assistant' && !message.is_error,
-                                'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400': message.is_error,
-                            }"
-                        >
-                            <template v-if="message.role === 'user'">
-                                {{ message.content }}
-                            </template>
-                            <div
-                                v-else
-                                class="prose dark:prose-invert prose-slate max-w-none"
-                                v-html="md.render(message.content)"
-                            />
-                        </div>
+                            v-else
+                            class="prose dark:prose-invert prose-slate max-w-none"
+                            v-html="md.render(message.content)"
+                        />
                     </div>
-                </template>
+                </div>
+            </div>
 
-                <p v-else class="text-sm text-gray-400 text-center">
-                    No messages yet. Start the conversation!
-                </p>
+            <p v-else-if="!isStreaming" class="text-sm text-gray-400 text-center">
+                No messages yet. Start the conversation!
+            </p>
+
+            <div 
+                v-if="streamedContent && messageList[messageList.length - 1]?.role !== 'assistant'" 
+                class="flex justify-start"
+            >
+                <div class="max-w-[80%] rounded-lg px-4 py-3 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                    <div
+                        class="prose dark:prose-invert prose-slate max-w-none"
+                        v-html="md.render(streamedContent)"
+                    />
+                </div>
+            </div>
             </div>
 
             <!-- Form -->

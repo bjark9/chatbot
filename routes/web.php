@@ -20,6 +20,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('ask/{conversation}/messages', [MessageController::class, 'store']);
     Route::get('/ask', [AskController::class, 'index'])
     ->name('ask.index');
+    Route::get('/ask/{conversation}', [AskController::class, 'show'])->name('ask.show');
     Route::post('/ask', [AskController::class, 'ask'])
     ->name('ask.post');
     // Personnalisation
@@ -31,6 +32,10 @@ Route::middleware(['auth'])->group(function () {
     ->name('stream.index');
     Route::post('/ask-stream', [\App\Http\Controllers\AskStreamController::class, 'stream'])
     ->name('stream.post');
+    // Route for a brand new prompt
+    Route::post('/ask', [AskController::class, 'ask'])->name('ask.new');
+    // Route for adding to an existing chat history
+    Route::post('/ask/{conversation}/messages', [AskController::class, 'ask'])->name('ask.append');
 });
 
 

@@ -17,7 +17,7 @@ use Psr\Http\Message\StreamInterface;
  */
 class SimpleAskStreamService
 {
-    public const DEFAULT_MODEL = 'openai/gpt-4o-mini';
+    public const DEFAULT_MODEL = 'mistralai/mistral-small-24b-instruct-2501';
 
     private string $apiKey;
     private string $baseUrl;
@@ -80,7 +80,8 @@ class SimpleAskStreamService
         array $messages,
         ?string $model = null,
         float $temperature = 1.0,
-        ?string $reasoningEffort = null
+        ?string $reasoningEffort = null,
+        ?callable $onEventReceived = null
     ): void {
         $response = $this->sendStreamRequest($messages, $model, $temperature, $reasoningEffort);
 
@@ -91,6 +92,10 @@ class SimpleAskStreamService
         }
 
         foreach ($this->parseSSEStream($response->toPsrResponse()->getBody()) as $event) {
+            if ($onEventReceived) {
+                $onEventReceived($event);
+            }
+
             if ($event['type'] === 'error') {
                 echo "[ERROR] " . $event['data'];
                 $this->flush();
