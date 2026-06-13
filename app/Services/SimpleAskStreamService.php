@@ -7,6 +7,7 @@ namespace App\Services;
 use Generator;
 use Illuminate\Support\Facades\Http;
 use Psr\Http\Message\StreamInterface;
+use App\Models\Instruction;
 
 /**
  * Service simplifié pour le streaming avec l'API OpenRouter.
@@ -238,12 +239,30 @@ class SimpleAskStreamService
      */
     private function getSystemPrompt(): array
     {
+        $user = auth()->user()?->name ?? 'l\'utilisateur';
+        $now = now()->locale('fr')->format('l d F Y H:i');
+
+        $instruction = Instruction::where('user_id', auth()->id())->first();
+
+        $parts = [
+            view('prompts.system', [
+                'now' => $now,
+                'user' => $user,
+            ])->render(),
+        ];
+
+        if ($instruction?->assistant_instructions) {
+            $parts[] = "Instructions pour l'IA :\n{$instruction->assistant_instructions}";
+        }
+
+        if ($instruction?->user_instructions) {
+            $parts[] = "Qui est l'utilisateur :\n{$instruction->user_instructions}";
+        }
+
+
         return [
             'role' => 'system',
-            'content' => view('prompts.system', [
-                'now' => now()->locale('fr')->format('l d F Y H:i'),
-                'user' => auth()->user()?->name ?? 'l\'utilisateur',
-            ])->render(),
+            'content' => implode("\n\n", $parts),
         ];
     }
 }
