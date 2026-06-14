@@ -1,9 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
-// axios -> js library that let's frontend make HTTP requests to backend without reloading whole page
-// User clicks → axios sends request in background → only the data updates → page stays the same
-import axios from 'axios'
 
 const props = defineProps({
     conversations: Array,

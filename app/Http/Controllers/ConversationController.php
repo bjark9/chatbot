@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AiModel;
 use App\Models\Conversation;
 use App\Models\Message;
 use Illuminate\Http\Request;
@@ -25,33 +26,11 @@ class ConversationController extends Controller
     }
 
     /**
-     * Create a new conversation
-     */
-    public function store(Request $request)
-    {
-        // Here we validate if 'title' variable in the request is conform to following rules:
-        $request->validate(['title' => 'nullable|string|max:255']); 
-
-        $conversation = Conversation::create(
-            [
-                'user_id' => Auth::id(),
-                'title' => $request->input('title', 'New Conversation'),
-                'is_archived' => false,
-            ]
-        );
-        return response()->json($conversation);
-    }
-
-    /**
      * GET conversation/{id}
      * Get a single conversation by id
      */
     public function show($id)
     {
-        $conversation = Conversation::where('id', $id)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
-
         return Inertia::render('conversations/Index', [
             'conversations' => $this->getConversations(), // Still need the sidebar
             'selectedId'    => (int) $id,
@@ -60,7 +39,7 @@ class ConversationController extends Controller
     }
 
     /**
-     * Helper function
+     * Helper function, just gets the conversations nothing more
      */
     public function getConversations()
     {
