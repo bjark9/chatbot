@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Conversation;
+use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -10,19 +11,17 @@ use Inertia\Inertia;
 class ConversationController extends Controller
 {
     /**
-     * GET the conversations and pass them as a prop to the corresponding vue using Inertia 
+     * GET /conversation
+     * Base Dashboard view
      * @return Inertia\Response 
      */
     public function index()
     {
-        $conversations = Conversation::where('user_id', Auth::id())
-            ->where('is_archived',false)
-            ->orderBy('updated_at', 'desc')
-            ->get();
-
         return Inertia::render('conversations/Index', [ 
-            'conversations' => $conversations,
-        ]);
+                    'conversations' => $this->getConversations(),
+                    'selectedId'    => null,
+                    'messages'      => [],
+                ]);
     }
 
     /**
@@ -51,12 +50,26 @@ class ConversationController extends Controller
     {
         $conversation = Conversation::where('id', $id)
             ->where('user_id', Auth::id())
-            ->with('messages') // TODO: Link messages to conversations
             ->firstOrFail();
 
-        return response()->json($conversation);
+        return Inertia::render('conversations/Index', [
+            'conversations' => $this->getConversations(), // Still need the sidebar
+            'selectedId'    => (int) $id,
+            'messages'      => Message::where('conversation_id', $id)->get(),
+        ]);
     }
-    
+
+    /**
+     * Helper function
+     */
+    public function getConversations()
+    {
+        return Conversation::where('user_id', Auth::id())
+            ->where('is_archived', false)
+            ->orderBy('updated_at', 'desc')
+            ->get();
+    }
+
     /**
      * PUT conversation/{id}
      * Update the title or the status (is_archived)
@@ -88,6 +101,6 @@ class ConversationController extends Controller
         
         $conversation->delete();
 
-        return response()->json(["message" => 'Conversation deleted']);
+        return redirect('/conversations');
     }
 }

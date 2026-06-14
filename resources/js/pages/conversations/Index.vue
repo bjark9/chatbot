@@ -1,57 +1,58 @@
 <script setup>
 import { ref, watch } from 'vue'
+import { router } from '@inertiajs/vue3'
 // axios -> js library that let's frontend make HTTP requests to backend without reloading whole page
 // User clicks → axios sends request in background → only the data updates → page stays the same
 import axios from 'axios'
 
 const props = defineProps({
     conversations: Array,
+    selectedId: [String, Number],
+    messages: Array,
 })
 
-const selectedId = ref(null)
-const messages = ref([])
 const loading = ref(false)
 
 function selectConversation(id)
 {
-    selectedId.value = id
+    router.get(`/conversations/${id}`, {}, {
+        preserveState: true, // Prevents full component re-render
+        preserveScroll: true // Keeps your sidebar scroll position
+    })
 }
 
-// Watch for when the user selects a different conversation
-// Triggers automatically when "selectId" changes
-watch(selectedId, async (newId) => {
-    if (!newId) return
+function deleteConversation(id) {
+    router.delete(`/conversations/${id}`)
+}
 
-    loading.value = true
-    
-    // Add try and catch or else the loader spinner stays forever 
-    try {
-        const response = await axios.get(`/conversations/${newId}`)
-        messages.value = response.data.messages
-    } catch (e) {
-        messages.value = []
-    } finally {
-        loading.value = false
-    }
-})
 </script>
 
 <template>
     <div class="flex gap-6 p-4">
 
         <!-- Conversation list (left column) -->
-        <div class="w-64 flex flex-col gap-1 h-screen overflow-y-auto">
-            <button
-                v-for="conversation in conversations"
+        <div class="w-64 flex flex-col gap-2 h-screen overflow-y-auto">
+            <div 
+                v-for="conversation in conversations" 
                 :key="conversation.id"
-                @click="selectConversation(conversation.id)"
-                class="w-full text-left px-4 py-3 rounded-lg text-sm transition-colors"
-                :class="selectedId === conversation.id
-                    ? 'bg-gray-200 dark:bg-gray-700 font-semibold'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'"
+                class="flex items-center justify-between p-2 rounded-lg transition-colors group"
+                :class="selectedId === conversation.id ? 'bg-gray-200 dark:bg-gray-700' : 'hover:bg-gray-100 dark:hover:bg-gray-800'"
             >
-                {{ conversation.title }}
-            </button>
+                <button
+                    @click="selectConversation(conversation.id)"
+                    class="text-left text-sm flex-1 font-medium text-gray-700 dark:text-gray-300"
+                    :class="{ 'font-semibold': selectedId === conversation.id }"
+                >
+                    {{ conversation.title }}
+                </button>
+
+                <button
+                    @click.stop="deleteConversation(conversation.id)"
+                    class="bg-red-200 text-red-700 hover:bg-red-300 text-xs px-2 py-1 rounded"
+                >
+                    Delete
+                </button>
+            </div>
         </div>
 
         <!-- Divider -->
