@@ -11,6 +11,7 @@ import { useStream } from '@laravel/stream-vue'; // Gère la connexion SSE et la
 const temperature = ref(1.0);
 const reasoningEffort = ref<'low' | 'medium' | 'high' | null>(null);
 
+// Envoyé par AskController
 const props = defineProps({
     models: Array,
     conversation: Object, // { id, title, messages: [{ id, role, content, is_error }] }
@@ -21,6 +22,7 @@ const props = defineProps({
     },
 })
 
+// Soumission HTTP, la gestion des erreurs de validation Laravel, et l'état de chargement déjà intégrés
 const form = useForm({
     message: '',
     model: props.selectedModel ?? props.models?.[0]?.id ?? '',
@@ -30,8 +32,9 @@ const form = useForm({
 /**
  * useStream hook - Le hook concatène automatiquement dans `data`
  * Le backend envoie du texte avec marqueurs [REASONING]...[/REASONING]
+ * Appelle 'ask-stream' -> le flux de réponse IA est géré par AskStreamController
  */
-const { data, isFetching, isStreaming, send, cancel } = useStream(
+const { data, isStreaming, send} = useStream(
     '/ask-stream',
     {
         onData: () => {
@@ -78,20 +81,6 @@ const submit = () => {
         },
     });
 };
-
-/**
- * Extrait le reasoning des marqueurs
- */
-const streamedReasoning = computed(() => {
-    if (!data.value) return '';
-    const matches = data.value.match(/\[REASONING\]([\s\S]*?)\[\/REASONING\]/g);
-    if (!matches) return '';
-    return matches
-        .map((m) =>
-            m.replace(/\[REASONING\]/g, '').replace(/\[\/REASONING\]/g, ''),
-        )
-        .join('');
-});
 
 /**
  * Extrait le contenu principal (sans le reasoning)
@@ -233,6 +222,7 @@ const md = new MarkdownIt({
                     >
                         {{ form.processing ? 'Thinking...' : 'Ask' }}
                     </button>
+                    <input type="file">
                 </div>
             </form>
 

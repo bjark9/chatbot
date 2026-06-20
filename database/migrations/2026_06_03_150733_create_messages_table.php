@@ -20,7 +20,7 @@ return new class extends Migration
             $table->text('content');
             $table->integer('tokens_used')->nullable()->default(0);
             $table->boolean('is_error')->default(false);
-            $table->foreignId('model_id')->nullable()->references('id')->on('ai_models'); // Nullable because if 'role'=user -> no FK ?
+            $table->foreignId('model_id')->nullable()->references('id')->on('ai_models'); // Nullable because messages and models can exist apart from eachother, not like the relations between conversation and messages. So no cascade
         });
     }
 

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Conversation;
-use App\Models\Message;
 use App\Models\AiModel;
 use App\Services\SimpleAskStreamService;
 use Illuminate\Http\Request;

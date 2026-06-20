@@ -9,7 +9,7 @@ return new class extends Migration
     {
         Schema::create('conversations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreignId('user_id')->references('id')->on('users')->onDelete('cascade'); // Si on delete un user tout ces conversations seront delete aussi
             $table->string('title')->nullable();
             $table->boolean('is_archived')->default(false);
             $table->timestamps(); 
